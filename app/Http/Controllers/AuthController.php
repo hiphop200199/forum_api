@@ -13,6 +13,8 @@ use App\Models\Account;
 use Exception;
 use Illuminate\Support\Facades\Validator;
 use App\Constant\Number;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -21,6 +23,55 @@ class AuthController extends Controller
     public function __construct(CustomResponse $response)
     {
         $this->response = $response;
+    }
+    public function googleLogin()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function googleCallback()
+    {
+        try {
+            session_start();
+
+            $googleUser = Socialite::driver('google')->user();
+            $user = Account::where('google_id', '=', $googleUser->id)->first();
+
+            if (empty($user)) {
+                $newUser = Account::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'password' => Hash::make('1234'),
+                    'google_id' => $googleUser->id,
+                    'create_time' => time(),
+                    'update_time' => time()
+                ]);
+
+                session_regenerate_id();
+                setcookie('member', $newUser['id'] . '|' . hash('sha256', $newUser['id'] . $newUser['email'] . $newUser['password'] . time())  . '|' . time(), time() + Number::ONE_DAY, '/', '', false, true);
+
+
+                $this->response->setMessage(StatusDescription::SUCCESS)->setCode(StatusCode::SUCCESS)->setData($newUser);
+            } else {
+                session_regenerate_id();
+                setcookie('member', $user['id'] . '|' . hash('sha256', $user['id'] . $user['email'] . $user['password'] . time())  . '|' . time(), time() + Number::ONE_DAY, '/', '', false, true);
+
+
+                $this->response->setMessage(StatusDescription::SUCCESS)->setCode(StatusCode::SUCCESS)->setData($user);
+            }
+        } catch (ValidationException $ve) {
+            $this->response->setMessage($ve->getMessage())->setCode(StatusCode::FORMAT_ERROR);
+        } catch (\Throwable $th) {
+            $this->response->setMessage($th->getMessage())->setCode($th->getCode());
+        } finally {
+            return ['response' => $this->response];
+        }
+
+
+
+        //如果使用者已存在，就直接登入，否則建立新資料後登入
+
+
     }
     public function login(Request $request)
     {

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('web')->group(function () {
     //註冊登入
+    Route::get('/google-login',[AuthController::class,'googleLogin']);
+    Route::get('/google-callback',[AuthController::class,'googleCallback']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
 
