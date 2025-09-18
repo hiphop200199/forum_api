@@ -10,7 +10,6 @@ use App\Constant\StatusCode;
 use App\Models\Account;
 use Exception;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
@@ -34,7 +33,7 @@ class AuthController extends Controller
                 $newUser = Account::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
-                    'password' => Hash::make('1234'),
+                    'password' => hash('sha256','1234'),
                     'google_id' => $googleUser->id,
                     'create_time' => time(),
                     'update_time' => time()
@@ -69,7 +68,7 @@ class AuthController extends Controller
             session_start();
 
             //檢查帳密是否正確
-            $password = hash('sha256', $input['password']);
+            $password = hash('sha256',$input['password']);
             $member = Account::getByEmailAndPassword($input['email'], $password);
             if (empty($member)) {
                 throw new Exception('帳號或密碼錯誤', StatusCode::ACCOUNT_OR_PASSWORD_ERROR);
