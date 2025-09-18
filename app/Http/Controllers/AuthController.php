@@ -191,4 +191,37 @@ class AuthController extends Controller
             return ['response' => $this->response];
         }
     }
+
+    public function edit(Request $request)
+    {
+        try {
+            $input = $request->all();
+
+            $rules = [
+                'id' => [
+                    'required',
+                    'numeric',
+                ],
+                'name' => [
+                    'required',
+                    'string',
+                ],
+            ];
+            $validator =  Validator::make($input, $rules);
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+
+            $input['update_time'] = time();
+            Account::where('id','=',$input['id'])->update($input);
+
+            $this->response->setMessage(StatusDescription::SUCCESS)->setCode(StatusCode::SUCCESS);
+        } catch (ValidationException $ve) {
+            $this->response->setMessage($ve->getMessage())->setCode(StatusCode::FORMAT_ERROR);
+        } catch (\Throwable $th) {
+            $this->response->setMessage($th->getMessage())->setCode(StatusCode::FAIL);
+        } finally {
+            return ['response' => $this->response];
+        }
+    }
 }

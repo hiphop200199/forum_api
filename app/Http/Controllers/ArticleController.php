@@ -74,4 +74,43 @@ class ArticleController extends Controller
             return ['response' => $this->response];
         }
     }
+
+    public function add(Request $request)
+    {
+        try {
+            $input = $request->all();
+            $rules = [
+                'account_id' => [
+                    'required',
+                    'numeric',
+                ],
+                'title' => [
+                    'required',
+                    'string',
+                ],
+                'content' => [
+                    'required',
+                    'string',
+                ],
+            ];
+            $validator =  Validator::make($input, $rules);
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
+            }
+
+            $input['title'] = htmlspecialchars(strip_tags($input['title']));
+            $input['content'] = htmlspecialchars(strip_tags($input['content']));
+            $input['create_time'] = time();
+            $input['update_time'] = time();
+            Article::create($input);
+
+            $this->response->setMessage(StatusDescription::SUCCESS)->setCode(StatusCode::SUCCESS);
+        } catch (ValidationException $ve) {
+            $this->response->setMessage($ve->getMessage())->setCode(StatusCode::FORMAT_ERROR);
+        } catch (\Throwable $th) {
+            $this->response->setMessage($th->getMessage())->setCode(StatusCode::FAIL);
+        } finally {
+            return ['response' => $this->response];
+        }
+    }
 }
